@@ -1,0 +1,137 @@
+﻿@page
+@model IndexModel
+@{
+	ViewData["Title"] = "Package Analyzer";
+}
+<div id="main" class="clearfix">
+	<div id="uploadForm">
+		<form action="/Ajax/UploadImages" method="post" onsubmit="return submitFilesForm(this);">
+			@Html.AntiForgeryToken() <!-- Prevent Cross Site Request Forgery -->
+			<input type="file" name="files" id="files-field" accept="*" onchange="submitFilesForm(this.form);"
+				multiple />
+			<label for="files-field" id="files-label"
+				ondragover="stopDefault(event);dragOver(this, 'Drop the files to upload them.');"
+				ondragenter="stopDefault(event);dragOver(this, 'Drop the files to upload them.');"
+				ondragleave="stopDefault(event);dragLeave(this);"
+				ondrop="stopDefault(event);dragLeave(this);addFilesAndSubmit(event);">Click to choose files or
+				drag-n-drop them
+				here</label>
+		</form>
+		<div>
+			<div id="files-progress"></div>
+		</div>
+		<div class="modal-page" id="uploaded-files"></div>
+		<script type="text/javascript">
+			function stopDefault(event) {
+				event.preventDefault();
+				event.stopPropagation();
+			}
+			function dragOver(label, text) {
+				label.style.animationName = "dropbox";
+				label.innerText = text;
+			}
+			function dragLeave(label) {
+				label.style.animationName = "";
+				label.innerText = "Click to choose files or drag-n-drop them here";
+			}
+			function addFilesAndSubmit(event) {
+				var files = event.target.files || event.dataTransfer.files;
+				var field = document.getElementById("files-field");
+				field.files = files;
+				submitFilesForm(field.form);
+			}
+			function submitFilesForm(form) {
+				var label = document.getElementById("files-label");
+				dragOver(label, "Uploading files..."); // set the drop zone text and styling
+				if (!FormData) {
+					alert("Function not supported by this browser.")
+					return false;
+				}
+				var fd = new FormData();
+				for (var i = 0; i < form.files.files.length; i++) {
+					var field = form.files;
+					fd.append(field.name, field.files[i], field.files[i].name);
+				}
+				fd.append(form.elements[0].name, form.elements[0].value); // must append the AntiForgeryToken to the form data
+				var progress = document.getElementById("files-progress");
+				var x = new XMLHttpRequest();
+				if (x.upload) {
+					x.upload.addEventListener("progress", function (event) {
+						var percentage = Math.round(event.loaded / event.total * 100);
+						progress.innerText = progress.style.width = percentage + "%";
+					});
+				}
+				x.onreadystatechange = function () {
+					if (x.readyState == 4) {
+						progress.innerText = progress.style.width = "";
+						form.files.value = "";
+						dragLeave(label); // this will reset the text and styling of the drop zone
+						if (x.status == 200) {
+							var images = x.responseText.split('|');
+							for (var i = 0; i < images.length; i++) {
+								var img = document.createElement("p");
+								//img.src = images[i];
+								img.innerText = images[i];
+								document.getElementById("results").appendChild(img);
+							}
+							//location.href = "#uploaded-files";
+						}
+						else if (x.status == 500) {
+							alert(x.responseText); // do something with the server error
+						}
+						else {
+							alert(x.status + ": " + x.statusText);
+						}
+					}
+				};
+				x.open(form.method, form.action, true);
+				x.send(fd);
+				return false; // do not forget this
+			}
+		</script>
+	</div>
+	<div id="groupOfCheckboxes">
+
+		<!-- Add checkboxes in one column -->
+		<div>
+			<input type="checkbox" id="checkbox1">
+			<label for="checkbox1">Checkbox 1</label>
+		</div>
+
+		<div>
+			<input type="checkbox" id="checkbox2">
+			<label for="checkbox2">Checkbox 2</label>
+		</div>
+
+		<div>
+			<input type="checkbox" id="checkbox3">
+			<label for="checkbox3">Checkbox 3</label>
+		</div>
+
+		<div>
+			<input type="checkbox" id="checkbox4">
+			<label for="checkbox4">Checkbox 4</label>
+		</div>
+
+		<div>
+			<input type="checkbox" id="checkbox5">
+			<label for="checkbox5">Checkbox 5</label>
+		</div>
+
+		<div>
+			<input type="checkbox" id="checkbox6">
+			<label for="checkbox6">Checkbox 6</label>
+		</div>
+
+		<div>
+			<input type="checkbox" id="checkbox7">
+			<label for="checkbox7">Checkbox 7</label>
+		</div>
+
+		<!-- Add rich text report area -->
+		<div id="reportRichText">
+			<label for="rich-text-report">Rich Text Report:</label>
+			<textarea id="rich-text-report" rows="4" cols="50"></textarea>
+		</div>
+	</div>
+</div>
